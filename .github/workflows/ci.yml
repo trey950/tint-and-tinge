@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntax-check server + lib
+        run: |
+          set -e
+          for f in server.js lib/*.js; do
+            echo "checking $f"
+            node --check "$f"
+          done
+      - name: Validate inline script in public/index.html
+        run: |
+          node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync('public/index.html', 'utf8');
+            const m = html.match(/<script>([\s\S]*?)<\/script>/);
+            if (!m) { console.error('No <script> block found'); process.exit(1); }
+            try { new Function(m[1]); console.log('public/index.html script OK (' + m[1].length + ' chars)'); }
+            catch (e) { console.error('Syntax error in public/index.html:', e.message); process.exit(1); }
+          "
+      - name: npm install (verify deps resolve)
+        run: npm install --no-audit --no-fund
