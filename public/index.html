@@ -1546,4 +1546,63 @@ function showResults() {
     // fallback: synthesize from season coords
     const fallback = data.palette[0][1];
     photoEl.style.background = `linear-gradient(135deg, ${data.palette[0][1]}, ${data.palette[3][1]})`;
-    document.getElementById
+    document.getElementById("undertone-dot").style.background = fallback;
+    document.getElementById("undertone-hex").textContent = "Photo not provided";
+  }
+
+  goStep(5);
+}
+
+function copyHex(hex) {
+  navigator.clipboard?.writeText(hex);
+  showToast(`Copied ${hex.toUpperCase()}`);
+}
+
+function saveAnalysis() {
+  showToast("✓ Sent! Check your inbox for your full color analysis.");
+}
+
+function startOver() {
+  state.step = 1;
+  state.photos = [null, null, null];
+  state.answers = {};
+  state.result = null;
+  state.undertoneHex = null;
+  document.querySelectorAll(".upload-tile").forEach(tile => {
+    tile.querySelectorAll("img").forEach(el => el.remove());
+    tile.classList.remove("has-image");
+    tile.querySelector("input").value = "";
+  });
+  document.querySelectorAll(".opt.selected").forEach(o => o.classList.remove("selected"));
+  document.querySelectorAll('input[type=radio]').forEach(r => r.checked = false);
+  ["cust-email","cust-name"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  goStep(1);
+}
+
+/* ---- TOAST ---- */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+/* ---- INIT ---- */
+document.addEventListener("DOMContentLoaded", () => {
+  loadConfig();
+  renderQuestionnaire();
+  setupUpload();
+  renderFaqs("faq-list");
+  renderFaqs("faq-list-results");
+  if (new URLSearchParams(location.search).get("canceled") === "1") {
+    showToast("Payment canceled. Your answers are saved — feel free to try again.");
+  }
+});
+</script>
+
+</body>
+</html>
