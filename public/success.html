@@ -11,37 +11,53 @@
   :root { --cream:#faf6f1; --line:#e6dcce; --ink:#3a352e; --muted:#8a7f73; --rose:#b9776f; --accent:#6b574a; }
   *{box-sizing:border-box} body{margin:0;font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:48px;max-width:540px;width:100%;text-align:center;box-shadow:0 30px 60px -25px rgba(58,53,46,0.25)}
-  .icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e8c9bd,#b9776f);margin:0 auto 24px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-family:'Cormorant Garamond',serif}
+  .icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#e8c9bd,#b9776f);margin:0 auto 24px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Cormorant Garamond',serif;position:relative;overflow:hidden}
+  .icon svg{width:36px;height:36px;stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .icon svg path{stroke-dasharray:60;stroke-dashoffset:60;animation:draw 0.7s ease 0.2s forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
   h1{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:500;margin:0 0 12px;line-height:1.1}
   p{color:var(--accent);line-height:1.6;margin:0 0 14px}
   .ref{font-size:0.82rem;color:var(--muted);margin-top:18px;font-family:'Cormorant Garamond',serif;font-style:italic}
   .season-box{background:linear-gradient(135deg,#f3e3d6,#ead2c5);border-radius:14px;padding:24px;margin:24px 0;display:none}
-  .season-box.show{display:block}
+  .season-box.show{display:block;animation:popIn 0.5s ease}
+  @keyframes popIn{from{opacity:0;transform:scale(0.96)}to{opacity:1;transform:scale(1)}}
   .season-name{font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--ink);margin:8px 0}
   .actions{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .btn{padding:14px 24px;border-radius:999px;font-weight:500;text-decoration:none;font-size:0.95rem;border:none;cursor:pointer}
+  .btn{padding:14px 24px;border-radius:999px;font-weight:500;text-decoration:none;font-size:0.95rem;border:none;cursor:pointer;font-family:inherit}
   .btn-primary{background:#2a2823;color:var(--cream)}
+  .btn-primary:disabled{opacity:0.5;cursor:wait}
   .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-  .pending{color:var(--muted);font-size:0.85rem;margin-top:14px}
+  .pending{color:var(--muted);font-size:0.9rem;margin-top:14px;min-height:1.4em}
+  .dots::after{content:'';animation:dots 1.4s steps(4,end) infinite}
+  @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+  .progress-line{height:3px;background:var(--line);border-radius:2px;margin-top:18px;overflow:hidden}
+  .progress-line>div{height:100%;background:var(--rose);width:0;animation:advance 90s linear forwards}
+  @keyframes advance{to{width:100%}}
+  .timeline{margin-top:14px;font-size:0.78rem;color:var(--muted);font-style:italic;font-family:'Cormorant Garamond',serif}
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(120px);background:#2a2823;color:var(--cream);padding:12px 22px;border-radius:999px;opacity:0;transition:opacity .3s, transform .4s;font-size:0.9rem}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="icon">✓</div>
+  <div class="icon"><svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></div>
   <h1>Payment received.</h1>
-  <p>Thank you. Your personal color analysis is on its way to your inbox in the next few minutes — check your spam folder if you don't see it.</p>
+  <p>Thank you. Your personal color analysis is being prepared — it will land in your inbox in the next minute or two. Check your spam folder if you don't see it.</p>
   <div class="season-box" id="season-box">
     <div style="font-size:0.7rem;letter-spacing:2px;color:var(--rose);text-transform:uppercase;font-weight:700;">Your season</div>
     <div class="season-name" id="season-name">—</div>
     <div style="font-style:italic;color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:1.15rem;" id="season-tag">—</div>
   </div>
-  <div class="pending" id="pending">Preparing your analysis…</div>
+  <div class="pending" id="pending"><span class="dots">Preparing your analysis</span></div>
+  <div class="timeline" id="timeline">Most analyses arrive within 90 seconds.</div>
+  <div class="progress-line" id="prog"><div></div></div>
   <div class="ref" id="ref-line"></div>
   <div class="actions">
-    <a class="btn btn-primary" href="/">Back to home</a>
-    <a class="btn btn-ghost" href="mailto:hello@tintandtinge.com">Questions?</a>
+    <button class="btn btn-primary" id="resend-btn" type="button" style="display:none">Resend my analysis</button>
+    <a class="btn btn-ghost" href="/">Back to home</a>
   </div>
 </div>
+<div class="toast" id="toast"></div>
 <script>
 const params = new URLSearchParams(location.search);
 const sessionId = params.get("session_id");
@@ -49,7 +65,11 @@ const seasonBox = document.getElementById("season-box");
 const seasonName = document.getElementById("season-name");
 const seasonTag = document.getElementById("season-tag");
 const pending = document.getElementById("pending");
+const timeline = document.getElementById("timeline");
 const refLine = document.getElementById("ref-line");
+const resendBtn = document.getElementById("resend-btn");
+const prog = document.getElementById("prog");
+const toast = document.getElementById("toast");
 
 const TAGLINES = {
   "Bright Spring":"Vivid, clear, and quietly electric.","True Spring":"Sunlit, golden, and warmly alive.","Light Spring":"Airy, gilded, and gently luminous.",
@@ -57,6 +77,12 @@ const TAGLINES = {
   "Soft Autumn":"Earthy, warm, and beautifully muted.","True Autumn":"Spiced, regal, and richly grounded.","Deep Autumn":"Smoldering, intense, and warm to the core.",
   "Deep Winter":"Velvet, jewel-toned, and unmistakably striking.","True Winter":"Crystalline, cool, and architecturally clear.","Bright Winter":"Electric, glassy, and impossibly clear."
 };
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2600);
+}
 
 async function loadConfig() {
   try { const r = await fetch("/api/config"); const c = await r.json();
@@ -70,9 +96,25 @@ async function loadConfig() {
 }
 loadConfig();
 
+const MSGS = [
+  "Preparing your analysis",
+  "Mapping your three color axes",
+  "Selecting your eighteen-color palette",
+  "Finalizing your style edit",
+];
+let msgIdx = 0;
+const msgInterval = setInterval(() => {
+  msgIdx = (msgIdx + 1) % MSGS.length;
+  if (pending.querySelector('.dots')) pending.innerHTML = `<span class="dots">${MSGS[msgIdx]}</span>`;
+}, 6000);
+
 let tries = 0;
 async function poll() {
-  if (!sessionId) { pending.textContent = "No session reference — contact support if you didn't receive your email."; return; }
+  if (!sessionId) {
+    pending.innerHTML = "No session reference — please email hello@tintandtinge.com if you didn't receive your analysis.";
+    clearInterval(msgInterval); prog.style.display='none'; timeline.style.display='none';
+    return;
+  }
   try {
     const r = await fetch(`/api/order/${sessionId}`);
     const o = await r.json();
@@ -80,15 +122,44 @@ async function poll() {
       seasonName.textContent = o.season;
       seasonTag.textContent  = TAGLINES[o.season] || "";
       seasonBox.classList.add("show");
-      pending.style.display = "none";
+      pending.innerHTML = "Sent to your inbox.";
       refLine.textContent = `Order ${o.ref}`;
+      resendBtn.style.display = "inline-flex";
+      prog.style.display='none'; timeline.style.display='none';
+      clearInterval(msgInterval);
       return;
     }
   } catch (e) {}
-  if (++tries > 40) { pending.textContent = "Your analysis is being prepared — you'll receive an email shortly."; return; }
+  if (++tries > 60) {
+    pending.innerHTML = "Still working — your analysis will arrive shortly. If you don't see it within 10 minutes, email hello@tintandtinge.com.";
+    clearInterval(msgInterval); prog.style.display='none';
+    return;
+  }
   setTimeout(poll, 1500);
 }
 poll();
+
+resendBtn.addEventListener("click", async () => {
+  if (!sessionId) return;
+  resendBtn.disabled = true;
+  const orig = resendBtn.textContent;
+  resendBtn.textContent = "Sending…";
+  try {
+    const r = await fetch("/api/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
+    if (r.ok) {
+      showToast("✓ Sent! Check your inbox.");
+    } else {
+      const j = await r.json().catch(() => ({}));
+      showToast(j.error || "Could not resend. Email hello@tintandtinge.com.");
+    }
+  } catch (e) { showToast("Network error — please try again."); }
+  resendBtn.disabled = false;
+  resendBtn.textContent = orig;
+});
 </script>
 </body>
 </html>

@@ -481,6 +481,49 @@ SOURCES
     font-size: 0.92rem;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Shimmer for price tag (during config load) */
+  .shimmer { position: relative; overflow: hidden; }
+  .shimmer::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
+    transform: translateX(-100%);
+    animation: shim 1.2s linear infinite;
+  }
+  @keyframes shim { to { transform: translateX(100%); } }
+  /* Auto-scroll-margin on questions so anchored scroll lands cleanly */
+  .q-block { scroll-margin-top: 80px; }
+  /* Mobile: hide hero art, keep funnel focused */
+  @media (max-width: 820px) {
+    .hero-art { display: none; }
+    .progress { display: none; }
+    h1 { font-size: 2.2rem; }
+  }
+  /* Optional photo upload disclosure */
+  .photo-disclosure {
+    margin: 30px 0; border: 1px solid var(--line); border-radius: 14px;
+    background: var(--cream-2); overflow: hidden;
+  }
+  .photo-disclosure summary {
+    cursor: pointer; padding: 18px 22px; list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--ink);
+  }
+  .photo-disclosure summary::-webkit-details-marker { display: none; }
+  .photo-disclosure summary::after {
+    content: "+"; font-size: 1.3rem; color: var(--rose-deep);
+    transition: transform 0.25s;
+  }
+  .photo-disclosure[open] summary::after { transform: rotate(45deg); }
+  .photo-disclosure-body { padding: 0 22px 22px; }
+  .photo-disclosure-body .upload-grid { margin: 14px 0; }
+  /* Methodology block */
+  .methodology {
+    margin: 36px 0; padding: 26px 28px; background: var(--cream-2);
+    border-radius: 14px; color: var(--accent); font-size: 0.95rem; line-height: 1.65;
+  }
+  .methodology strong { color: var(--ink); }
+
 </style>
 </head>
 <body>
@@ -492,8 +535,6 @@ SOURCES
   </div>
   <div class="progress" id="progress">
     <div class="progress-dot active"></div>
-    <div class="progress-dot"></div>
-    <div class="progress-dot"></div>
     <div class="progress-dot"></div>
     <div class="progress-dot"></div>
   </div>
@@ -509,7 +550,7 @@ SOURCES
           <div class="eyebrow">Personal Color Analysis</div>
           <h1>Find the colors that were always yours.</h1>
           <p class="lede">A structured, professional-grade season analysis built from your photos, your features, and the questions a couturier would ask. Delivered as a complete personal palette in minutes.</p>
-          <div class="price-tag">One-time analysis · <strong>$49</strong></div>
+          <div class="price-tag" id="price-tag">One-time analysis · <strong>$49</strong></div>
 
           <div class="trust-strip">
             <div class="trust-item">
@@ -535,7 +576,7 @@ SOURCES
             <li>Yours forever — save, print, shop with confidence</li>
           </ul>
           <div class="btn-row">
-            <button class="btn btn-primary" onclick="goStep(2)">Begin analysis →</button>
+            <button class="btn btn-primary" onclick="goStep(3)">Begin analysis →</button>
             <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">How it works</button>
           </div>
         </div>
@@ -557,6 +598,9 @@ SOURCES
           <div class="info-card"><h4>Hue</h4><p>Warm undertones glow against gold; cool undertones come alive against silver. We map your temperature first.</p></div>
           <div class="info-card"><h4>Value</h4><p>Are you naturally light and airy, or rich and saturated? We measure how deep your features want to go.</p></div>
           <div class="info-card"><h4>Chroma</h4><p>Bright and clear, or soft and muted? The clarity of your palette is what makes a color sing or fall flat.</p></div>
+        </div>
+        <div class="methodology">
+          <strong>How we calculate your season.</strong> Each answer you give scores against the three axes — temperature (warm vs. cool), value (light vs. deep), and chroma (clear vs. soft). Your final coordinate is matched to the closest of twelve color seasons using Euclidean distance, and a confidence rating is derived from how close you land to that season's center. The same diagnostic that an in-person analyst uses, condensed into ten questions you answer honestly in natural light.
         </div>
       </div>
 
@@ -623,7 +667,7 @@ SOURCES
         </div>
 
         <div class="btn-row" style="justify-content: center; margin-top: 36px;">
-          <button class="btn btn-primary" onclick="goStep(2)">Begin your analysis · $49 →</button>
+          <button class="btn btn-primary" onclick="goStep(3)">Begin your analysis · $49 →</button>
         </div>
       </div>
 
@@ -675,21 +719,56 @@ SOURCES
     </div>
   </section>
 
-  <!-- STEP 3: QUESTIONNAIRE -->
+  <!-- STEP 3: QUESTIONNAIRE (combined: contact + questions + optional photos) -->
   <section class="step" id="step-3">
     <div class="card">
-      <div class="eyebrow">Step 2 of 4</div>
+      <div class="eyebrow">Step 1 of 2</div>
       <h2>Tell us about your features.</h2>
-      <p class="lede">Answer honestly — this is the core of your analysis. Each question scores against three axes: warmth, depth, and clarity.</p>
+      <p class="lede">Answer honestly — this is the core of your analysis. We'll email your full report after secure checkout.</p>
 
-      <form id="questionnaire" onsubmit="event.preventDefault(); submitQuestionnaire();">
+      <div class="q-block" data-q="contact">
+        <div class="q-label">Where should we send your analysis?</div>
+        <div class="q-help">We'll email your full color report to this address immediately after payment.</div>
+        <div class="field-row" style="margin-top:12px;">
+          <div class="field"><label>Your name</label><input type="text" id="cust-name" placeholder="First and last" autocomplete="name" /></div>
+          <div class="field"><label>Email address</label><input type="email" id="cust-email" placeholder="you@example.com" autocomplete="email" required /></div>
+        </div>
+      </div>
+
+      <form id="questionnaire" onsubmit="event.preventDefault(); submitToCheckout();">
         <!-- questions injected by JS -->
       </form>
 
+      <details class="photo-disclosure">
+        <summary>Add photos for a more personalized read · optional</summary>
+        <div class="photo-disclosure-body">
+          <p style="color:var(--accent); margin:6px 0 10px; font-size:0.92rem;">Photos stay in your browser — they're never uploaded. They help personalize your report with a rough undertone sample.</p>
+          <div class="upload-grid">
+            <label class="upload-tile" data-slot="0">
+              <input type="file" accept="image/*" />
+              <button class="tile-remove" type="button">×</button>
+              <div class="placeholder"><strong>Face photo</strong>Natural light</div>
+            </label>
+            <label class="upload-tile" data-slot="1">
+              <input type="file" accept="image/*" />
+              <button class="tile-remove" type="button">×</button>
+              <div class="placeholder"><strong>Hair photo</strong>Show natural color</div>
+            </label>
+            <label class="upload-tile" data-slot="2">
+              <input type="file" accept="image/*" />
+              <button class="tile-remove" type="button">×</button>
+              <div class="placeholder"><strong>Full-body</strong>Optional</div>
+            </label>
+          </div>
+          <p style="font-size:0.82rem; color:var(--muted); margin:6px 0;">Use natural daylight, no filters, hair pulled back, wear a neutral top (white/gray/black) so it doesn't compete with your coloring.</p>
+        </div>
+      </details>
+
       <div class="btn-row">
-        <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
-        <button class="btn btn-primary" onclick="submitQuestionnaire()">Continue to checkout →</button>
+        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" id="pay-btn" onclick="submitToCheckout()">Continue to secure payment · $49</button>
       </div>
+      <div class="secure-note" style="margin-top:14px;">🔒 Payment by Stripe · 7-day refund guarantee · No card data touches our servers</div>
     </div>
   </section>
 
@@ -1251,22 +1330,45 @@ const state = {
   photos: [null, null, null],
   answers: {},
   result: null,
-  undertoneHex: null
+  undertoneHex: null,
+  email: "",
+  name: ""
 };
+
+// Persistence: keep answers + contact in sessionStorage so back-from-checkout works
+const STORAGE_KEY = "tt_wizard_state";
+function persistState() {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+      answers: state.answers, email: state.email, name: state.name
+    }));
+  } catch (_) {}
+}
+function rehydrateState() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.answers) state.answers = saved.answers;
+    if (saved.email) state.email = saved.email;
+    if (saved.name) state.name = saved.name;
+  } catch (_) {}
+}
 
 function goStep(n) {
   document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
   document.getElementById("step-" + n).classList.add("active");
   // Meta Pixel events
-  if (n === 2 && state.step < 2) pixelTrack("AddToCart", { content_name: "Color Analysis", value: 49.00, currency: "USD" });
-  if (n === 4 && state.step < 4) pixelTrack("InitiateCheckout", { value: 49.00, currency: "USD" });
+  if (n === 3 && state.step < 3) pixelTrack("AddToCart", { content_name: "Color Analysis", value: 49.00, currency: "USD" });
   state.step = n;
-  // progress
+  // progress (3 dots: welcome=1 -> dot 0, questionnaire=3 -> dot 1, results=5 -> dot 2)
   const dots = document.querySelectorAll(".progress-dot");
+  const map = {1:0, 3:1, 5:2};
+  const target = map[n] !== undefined ? map[n] : 0;
   dots.forEach((d, i) => {
     d.classList.remove("active", "done");
-    if (i + 1 < n) d.classList.add("done");
-    else if (i + 1 === n) d.classList.add("active");
+    if (i < target) d.classList.add("done");
+    else if (i === target) d.classList.add("active");
   });
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1297,8 +1399,20 @@ function renderQuestionnaire() {
       opt.classList.add("selected");
       opt.querySelector("input").checked = true;
       state.answers[q] = parseInt(opt.dataset.oi);
+      persistState();
+      // Auto-scroll to next unanswered question
+      const allBlocks = Array.from(form.querySelectorAll(".q-block"));
+      const currentBlock = opt.closest(".q-block");
+      const idx = allBlocks.indexOf(currentBlock);
+      const next = allBlocks.slice(idx + 1).find(b => !b.querySelector(".opt.selected"));
+      if (next) setTimeout(() => next.scrollIntoView({ behavior: "smooth", block: "start" }), 220);
     });
   });
+  // Rehydrate selections after render
+  for (const [qid, oi] of Object.entries(state.answers)) {
+    const sel = form.querySelector(`.opt[data-q="${qid}"][data-oi="${oi}"]`);
+    if (sel) { sel.classList.add("selected"); const inp = sel.querySelector("input"); if (inp) inp.checked = true; }
+  }
 }
 
 /* ---- SCORING ---- */
@@ -1334,8 +1448,28 @@ function classify() {
   return { season: best, confidence: conf, axes: { warmth, value, chroma } };
 }
 
-function submitQuestionnaire() {
-  // check all answered
+function submitQuestionnaire() { submitToCheckout(); }
+
+async function submitToCheckout() {
+  const emailEl = document.getElementById("cust-email");
+  const nameEl  = document.getElementById("cust-name");
+  const email = emailEl?.value.trim() || "";
+  const name  = nameEl?.value.trim()  || "";
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    showToast("Please enter a valid email address.");
+    emailEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    emailEl?.focus();
+    return;
+  }
+  if (!name) {
+    showToast("Please enter your name.");
+    nameEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+    nameEl?.focus();
+    return;
+  }
+  state.email = email; state.name = name; persistState();
+
+  // Validate all questions answered
   const missing = QUESTIONS.filter(q => state.answers[q.id] === undefined);
   if (missing.length) {
     showToast(`Please answer all ${QUESTIONS.length} questions (${missing.length} remaining).`);
@@ -1343,7 +1477,25 @@ function submitQuestionnaire() {
     if (firstMissing) firstMissing.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  goStep(4);
+
+  // Fire pixel + create Stripe Checkout session
+  pixelTrack("InitiateCheckout", { value: 49.00, currency: "USD" });
+  const btn = document.getElementById("pay-btn");
+  const orig = btn?.textContent;
+  if (btn) { btn.textContent = "Redirecting to secure checkout…"; btn.disabled = true; }
+  try {
+    const r = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name, answers: state.answers }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Checkout failed");
+    window.location.href = data.url;
+  } catch (e) {
+    if (btn) { btn.textContent = orig; btn.disabled = false; }
+    showToast(e.message || "Could not start checkout. Please try again.");
+  }
 }
 
 /* ---- PHOTO UPLOAD ---- */
@@ -1377,12 +1529,26 @@ function setupUpload() {
       input.value = "";
     });
 
-    // drag styling
+    // drag-and-drop: actually process the dropped file
     tile.addEventListener("dragenter", e => { e.preventDefault(); tile.classList.add("drag"); });
-    tile.addEventListener("dragover",  e => e.preventDefault());
+    tile.addEventListener("dragover",  e => { e.preventDefault(); tile.classList.add("drag"); });
     tile.addEventListener("dragleave", e => tile.classList.remove("drag"));
     tile.addEventListener("drop", e => {
+      e.preventDefault();
       tile.classList.remove("drag");
+      const file = e.dataTransfer?.files?.[0];
+      if (!file || !/^image\//.test(file.type)) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const url = ev.target.result;
+        state.photos[slot] = url;
+        const img = document.createElement("img");
+        img.src = url;
+        tile.querySelectorAll("img").forEach(el => el.remove());
+        tile.appendChild(img);
+        tile.classList.add("has-image");
+      };
+      reader.readAsDataURL(file);
     });
   });
 }
@@ -1427,12 +1593,15 @@ function sampleUndertone(photoDataUrl, cb) {
 let META_PIXEL_ID = "";
 let APP_CONFIG = {};
 async function loadConfig() {
+  const tag = document.getElementById("price-tag");
+  if (tag) tag.classList.add("shimmer");
   try {
     const r = await fetch("/api/config");
     APP_CONFIG = await r.json();
     META_PIXEL_ID = APP_CONFIG.metaPixelId || "";
     if (META_PIXEL_ID) initMetaPixel(META_PIXEL_ID);
   } catch (e) { console.warn("config load failed", e); }
+  finally { if (tag) setTimeout(() => tag.classList.remove("shimmer"), 400); }
 }
 function initMetaPixel(id) {
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
@@ -1443,40 +1612,9 @@ function pixelTrack(event, data) {
   if (window.fbq) window.fbq('track', event, data || {});
 }
 
-/* ---- CHECKOUT — Stripe ---- */
-async function processPayment() {
-  const email = document.getElementById("cust-email").value.trim();
-  const name  = document.getElementById("cust-name").value.trim();
-  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    showToast("Please enter a valid email address.");
-    return;
-  }
-  const btn = document.getElementById("pay-btn");
-  const orig = btn.textContent;
-  btn.textContent = "Redirecting to secure checkout…";
-  btn.disabled = true;
+/* ---- legacy processPayment — flow now collects in step 3 ---- */
+function processPayment() { submitToCheckout(); }
 
-  pixelTrack("InitiateCheckout", { value: 49.00, currency: "USD" });
-
-  try {
-    const r = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name, answers: state.answers }),
-    });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || "Checkout failed");
-    // Store result locally so success page can render immediately
-    sessionStorage.setItem("tt_answers", JSON.stringify(state.answers));
-    sessionStorage.setItem("tt_email", email);
-    sessionStorage.setItem("tt_name", name);
-    window.location.href = data.url;
-  } catch (e) {
-    btn.textContent = orig;
-    btn.disabled = false;
-    showToast(e.message || "Could not start checkout. Please try again.");
-  }
-}
 
 /* ---- RESULTS ---- */
 function showResults() {
@@ -1563,6 +1701,7 @@ function saveAnalysis() {
 }
 
 function startOver() {
+  try { sessionStorage.removeItem(STORAGE_KEY); } catch(_) {}
   state.step = 1;
   state.photos = [null, null, null];
   state.answers = {};
@@ -1593,13 +1732,21 @@ function showToast(msg) {
 
 /* ---- INIT ---- */
 document.addEventListener("DOMContentLoaded", () => {
+  rehydrateState();
   loadConfig();
   renderQuestionnaire();
   setupUpload();
   renderFaqs("faq-list");
   renderFaqs("faq-list-results");
+  // Rehydrate contact fields
+  const ne = document.getElementById("cust-name");  if (ne && state.name)  ne.value  = state.name;
+  const ee = document.getElementById("cust-email"); if (ee && state.email) ee.value = state.email;
+  // Persist contact fields on blur
+  ne?.addEventListener("input", () => { state.name = ne.value; persistState(); });
+  ee?.addEventListener("input", () => { state.email = ee.value; persistState(); });
   if (new URLSearchParams(location.search).get("canceled") === "1") {
-    showToast("Payment canceled. Your answers are saved — feel free to try again.");
+    showToast("Payment canceled. Your answers are saved — feel free to continue where you left off.");
+    goStep(3);
   }
 });
 </script>
