@@ -28,7 +28,7 @@ const __dirname  = path.dirname(__filename);
 const app = express();
 const PORT     = process.env.PORT || 3000;
 const APP_URL  = process.env.APP_URL || `http://localhost:${PORT}`;
-const stripe   = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const stripe   = (process.env.STRIPE_SECRET_KEY||"").startsWith("sk_") ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const PRICE_ID = process.env.STRIPE_PRICE_ID;
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET;
 
