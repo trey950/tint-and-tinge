@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: tint-and-tinge
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_URL
+        value: https://tintandtinge.com
+      - key: PORT
+        value: 3000
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        value: hello@tintandtinge.com
+      - key: RESEND_REPLY_TO
+        value: hello@tintandtinge.com
+      - key: META_PIXEL_ID
+        sync: false
+      - key: BUSINESS_NAME
+        value: Tint and Tinge
+      - key: BUSINESS_ADDRESS
+        value: 193 Westbury Circle, Folsom, CA 95630
+      - key: BUSINESS_SUPPORT_EMAIL
+     

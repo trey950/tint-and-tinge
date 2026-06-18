@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Thank you — Tint & Tinge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --cream:#faf6f1; --line:#e6dcce; --ink:#3a352e; --muted:#8a7f73; --rose:#b9776f; --accent:#6b574a; }
+  *{box-sizing:border-box} body{margin:0;font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:48px;max-width:540px;width:100%;text-align:center;box-shadow:0 30px 60px -25px rgba(58,53,46,0.25)}
+  .icon{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e8c9bd,#b9776f);margin:0 auto 24px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;font-family:'Cormorant Garamond',serif}
+  h1{font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:500;margin:0 0 12px;line-height:1.1}
+  p{color:var(--accent);line-height:1.6;margin:0 0 14px}
+  .ref{font-size:0.82rem;color:var(--muted);margin-top:18px;font-family:'Cormorant Garamond',serif;font-style:italic}
+  .season-box{background:linear-gradient(135deg,#f3e3d6,#ead2c5);border-radius:14px;padding:24px;margin:24px 0;display:none}
+  .season-box.show{display:block}
+  .season-name{font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--ink);margin:8px 0}
+  .actions{margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .btn{padding:14px 24px;border-radius:999px;font-weight:500;text-decoration:none;font-size:0.95rem;border:none;cursor:pointer}
+  .btn-primary{background:#2a2823;color:var(--cream)}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .pending{color:var(--muted);font-size:0.85rem;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">✓</div>
+  <h1>Payment received.</h1>
+  <p>Thank you. Your personal color analysis is on its way to your inbox in the next few minutes — check your spam folder if you don't see it.</p>
+  <div class="season-box" id="season-box">
+    <div style="font-size:0.7rem;letter-spacing:2px;color:var(--rose);text-transform:uppercase;font-weight:700;">Your season</div>
+    <div class="season-name" id="season-name">—</div>
+    <div style="font-style:italic;color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:1.15rem;" id="season-tag">—</div>
+  </div>
+  <div class="pending" id="pending">Preparing your analysis…</div>
+  <div class="ref" id="ref-line"></div>
+  <div class="actions">
+    <a class="btn btn-primary" href="/">Back to home</a>
+    <a class="btn btn-ghost" href="mailto:hello@tintandtinge.com">Questions?</a>
+  </div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const sessionId = params.get("session_id");
+const seasonBox = document.getElementById("season-box");
+const seasonName = document.getElementById("season-name");
+const seasonTag = document.getElementById("season-tag");
+const pending = document.getElementById("pending");
+const refLine = document.getElementById("ref-line");
+
+const TAGLINES = {
+  "Bright Spring":"Vivid, clear, and quietly electric.","True Spring":"Sunlit, golden, and warmly alive.","Light Spring":"Airy, gilded, and gently luminous.",
+  "Light Summer":"Watercolor, dawn-cool, and quietly luminous.","True Summer":"Misted, dignified, and beautifully cool.","Soft Summer":"Dusty, refined, and full of secret depth.",
+  "Soft Autumn":"Earthy, warm, and beautifully muted.","True Autumn":"Spiced, regal, and richly grounded.","Deep Autumn":"Smoldering, intense, and warm to the core.",
+  "Deep Winter":"Velvet, jewel-toned, and unmistakably striking.","True Winter":"Crystalline, cool, and architecturally clear.","Bright Winter":"Electric, glassy, and impossibly clear."
+};
+
+async function loadConfig() {
+  try { const r = await fetch("/api/config"); const c = await r.json();
+    if (c.metaPixelId) {
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', c.metaPixelId);
+      fbq('track', 'PageView');
+      fbq('track', 'Purchase', { value: 49.00, currency: 'USD' });
+    }
+  } catch (e) {}
+}
+loadConfig();
+
+let tries = 0;
+async function poll() {
+  if (!sessionId) { pending.textContent = "No session reference — contact support if you didn't receive your email."; return; }
+  try {
+    const r = await fetch(`/api/order/${sessionId}`);
+    const o = await r.json();
+    if (o.status === "ready") {
+      seasonName.textContent = o.season;
+      seasonTag.textContent  = TAGLINES[o.season] || "";
+      seasonBox.classList.add("show");
+      pending.style.display = "none";
+      refLine.textContent = `Order ${o.ref}`;
+      return;
+    }
+  } catch (e) {}
+  if (++tries > 40) { pending.textContent = "Your analysis is being prepared — you'll receive an email shortly."; return; }
+  setTimeout(poll, 1500);
+}
+poll();
+</script>
+</body>
+</html>
