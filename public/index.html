@@ -1494,10 +1494,11 @@ function renderQuestionnaire() {
       state.answers[q] = parseInt(opt.dataset.oi);
       persistState();
       updateTeaser();
-      // Auto-advance to the next step in the stepper
+      // Auto-advance once. A click on a <label> that wraps a radio fires twice,
+      // so guard on the originating panel to avoid skipping the next question.
+      const fromPanel = opt.closest(".wiz-panel");
       setTimeout(() => {
-        const cur = wizPanels[wizIndex];
-        if (cur && cur.getAttribute("data-panel") === "q") wizNext();
+        if (wizPanels[wizIndex] === fromPanel && fromPanel.getAttribute("data-panel") === "q") wizNext();
       }, 260);
     });
   });
