@@ -535,6 +535,29 @@ SOURCES
   .teaser-read { font-family:'Cormorant Garamond',serif; font-size:1.45rem; color:var(--ink); margin:6px 0 10px; line-height:1.3; }
   .teaser-lock { font-size:0.85rem; color:var(--accent); }
 
+
+  /* Quiz stepper */
+  .wiz-progress { height: 4px; background: var(--line); border-radius: 2px; margin: 10px 0 6px; overflow: hidden; }
+  .wiz-progress-bar { height: 100%; width: 0; background: var(--rose-deep); border-radius: 2px; transition: width .35s ease; }
+  .wiz-count { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 22px; }
+  .wiz-panel { display: none; }
+  .wiz-panel.active { display: block; animation: wizfade .28s ease; }
+  @keyframes wizfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .wiz-panel .q-block { border-bottom: none; margin: 8px 0 0; padding-bottom: 0; }
+  .wiz-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; }
+
+  /* Sample report modal */
+  .sample-modal { position: fixed; inset: 0; background: rgba(42,40,35,0.55); z-index: 2000; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  .sample-modal-inner { background: #fff; max-width: 920px; width: 100%; border-radius: 18px; padding: 40px; position: relative; box-shadow: 0 30px 70px -20px rgba(0,0,0,0.45); }
+  @media (max-width: 600px) { .sample-modal-inner { padding: 24px; } .sample-modal { padding: 16px 8px; } }
+  .sample-close { position: absolute; top: 14px; right: 16px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--cream); color: var(--ink); font-size: 1.3rem; line-height: 1; cursor: pointer; }
+  .sample-close:hover { background: var(--rose-deep); color: #fff; }
+  .sample-season { font-family: 'Cormorant Garamond', serif; font-size: 2.6rem; line-height: 1.1; color: var(--ink); margin: 6px 0 4px; }
+  .sample-tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.25rem; color: var(--rose-deep); margin-bottom: 6px; }
+  .sample-meta { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; }
+  #sample-body h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--ink); margin: 28px 0 12px; }
+  .sample-watermark { display:inline-block; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 700; color: var(--rose-deep); background: #f3e3d6; padding: 4px 10px; border-radius: 999px; }
+
 </style>
 </head>
 <body>
@@ -589,6 +612,7 @@ SOURCES
           <p class="price-anchor">In-person color analysis runs <s>$150–300</s>. Tint &amp; Tinge uses the same method — <strong>$49</strong>, from your own photos.</p>
           <div class="btn-row">
             <button class="btn btn-primary" onclick="goStep(3)">Begin analysis →</button>
+            <button class="btn btn-ghost" onclick="openSample()">See a sample report</button>
             <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">How it works</button>
           </div>
           <p class="cta-guarantee"><span class="stars">★★★★★</span> Loved by 12,847 women · <strong>Love your palette or your money back — 7 days.</strong></p>
@@ -735,23 +759,29 @@ SOURCES
   <!-- STEP 3: QUESTIONNAIRE (combined: contact + questions + optional photos) -->
   <section class="step" id="step-3">
     <div class="card">
-      <div class="eyebrow">Step 1 of 2</div>
-      <h2>Tell us about your features.</h2>
-      <p class="lede">Answer honestly — this is the core of your analysis. We'll email your full report after secure checkout.</p>
+      <div class="eyebrow" id="wiz-eyebrow">Step 1 of 2</div>
+      <h2 id="wiz-title">Tell us about your features.</h2>
+      <p class="lede" id="wiz-lede">One quick question at a time — about two minutes. We'll email your full report after secure checkout.</p>
 
-      <div class="q-block" data-q="contact">
-        <div class="q-label">Where should we send your analysis?</div>
-        <div class="q-help">We'll email your full color report to this address immediately after payment.</div>
-        <div class="field-row" style="margin-top:12px;">
-          <div class="field"><label>Your name</label><input type="text" id="cust-name" placeholder="First and last" autocomplete="name" /></div>
-          <div class="field"><label>Email address</label><input type="email" id="cust-email" placeholder="you@example.com" autocomplete="email" required /></div>
+      <div class="wiz-progress"><div class="wiz-progress-bar" id="wiz-progress-bar"></div></div>
+      <div class="wiz-count" id="wiz-count"></div>
+
+      <div class="wiz-panel active" data-panel="contact">
+        <div class="q-block" data-q="contact">
+          <div class="q-label">Where should we send your analysis?</div>
+          <div class="q-help">We'll email your full color report to this address immediately after payment.</div>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field"><label>Your name</label><input type="text" id="cust-name" placeholder="First and last" autocomplete="name" /></div>
+            <div class="field"><label>Email address</label><input type="email" id="cust-email" placeholder="you@example.com" autocomplete="email" required /></div>
+          </div>
         </div>
       </div>
 
       <form id="questionnaire" onsubmit="event.preventDefault(); submitToCheckout();">
-        <!-- questions injected by JS -->
+        <!-- question panels injected by JS -->
       </form>
 
+      <div class="wiz-panel" data-panel="review">
       <details class="photo-disclosure">
         <summary>Add photos for a more personalized read · optional</summary>
         <div class="photo-disclosure-body">
@@ -783,11 +813,14 @@ SOURCES
         <div class="teaser-lock">🔒 Your exact season — one of twelve — plus your full palette, neutrals, metals, prints, makeup and your clothing &amp; jewelry edit unlock with your analysis.</div>
       </div>
       <p class="price-anchor" style="text-align:center;">In-person analysis costs $150–300. Your complete report is <strong>$49</strong>.</p>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
-        <button class="btn btn-primary" id="pay-btn" onclick="submitToCheckout()">Continue to secure payment · $49</button>
-      </div>
       <div class="secure-note" style="margin-top:14px;">🔒 Payment by Stripe · <strong>Love it or your money back, 7 days</strong> · No card data touches our servers</div>
+      </div><!-- /review panel -->
+
+      <div class="wiz-nav">
+        <button class="btn btn-ghost" id="wiz-back" type="button" onclick="wizBack()">← Back</button>
+        <button class="btn btn-primary" id="wiz-next" type="button" onclick="wizNext()">Next →</button>
+        <button class="btn btn-primary" id="pay-btn" type="button" onclick="submitToCheckout()" style="display:none;">Continue to secure payment · $49</button>
+      </div>
     </div>
   </section>
 
@@ -1326,7 +1359,11 @@ const FAQS = [
   },
   {
     q: "What exactly do I get for $49?",
-    a: "Your season verdict with a confidence rating, a curated palette of 18 colors with hex codes, five neutrals to build a wardrobe around, colors to avoid with reasons, metals guidance, prints and patterns recommendations, a full makeup edit, and a personalized descriptor explaining what your season means. Yours to save, print, and shop with forever."
+    a: "Your season verdict with a confidence rating, a curated palette of 18 colors with hex codes, five neutrals to build a wardrobe around, colors to avoid with reasons, metals guidance, prints and patterns recommendations, a full makeup edit, a clothing and jewelry edit, and a personalized descriptor explaining what your season means. Yours to save, print, and shop with forever."
+  },
+  {
+    q: "Does it tell me what to actually wear and buy?",
+    a: "Yes — beyond your color palette, every report includes a tailored style edit: the metals, prints, makeup, clothing, and jewelry that flatter your season, with specific fabrics, silhouettes, and stones to look for (and what to skip). It's built to take shopping with you."
   },
   {
     q: "Is my photo and data private? Do you store anything?",
@@ -1334,7 +1371,7 @@ const FAQS = [
   },
   {
     q: "Can I retake the analysis if I'm not happy?",
-    a: "Yes. We offer free retakes within 30 days — most people who retake either had inconsistent lighting on their first photos or weren't sure about a question or two. We also offer a full refund within 30 days, no questions asked, if you're not happy with your result."
+    a: "Yes. If your first result felt off — usually inconsistent lighting on the photos, or uncertainty on a question or two — email us and we'll set you up with a fresh read. And if you're simply not happy, we offer a full refund within 7 days of purchase, no questions asked."
   },
   {
     q: "How long does it take?",
@@ -1421,6 +1458,7 @@ function goStep(n) {
     if (i < target) d.classList.add("done");
     else if (i === target) d.classList.add("active");
   });
+  if (n === 3) wizInit();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -1428,7 +1466,7 @@ function goStep(n) {
 function renderQuestionnaire() {
   const form = document.getElementById("questionnaire");
   form.innerHTML = QUESTIONS.map((q, idx) => `
-    <div class="q-block" data-q="${q.id}">
+    <div class="wiz-panel q-block" data-panel="q" data-q="${q.id}">
       <div class="q-label">${idx + 1}. ${q.label}</div>
       <div class="q-help">${q.help}</div>
       <div class="options${q.options.length > 5 ? '' : ' tight'}">
@@ -1452,12 +1490,11 @@ function renderQuestionnaire() {
       state.answers[q] = parseInt(opt.dataset.oi);
       persistState();
       updateTeaser();
-      // Auto-scroll to next unanswered question
-      const allBlocks = Array.from(form.querySelectorAll(".q-block"));
-      const currentBlock = opt.closest(".q-block");
-      const idx = allBlocks.indexOf(currentBlock);
-      const next = allBlocks.slice(idx + 1).find(b => !b.querySelector(".opt.selected"));
-      if (next) setTimeout(() => next.scrollIntoView({ behavior: "smooth", block: "start" }), 220);
+      // Auto-advance to the next step in the stepper
+      setTimeout(() => {
+        const cur = wizPanels[wizIndex];
+        if (cur && cur.getAttribute("data-panel") === "q") wizNext();
+      }, 260);
     });
   });
   // Rehydrate selections after render
@@ -1466,6 +1503,98 @@ function renderQuestionnaire() {
     if (sel) { sel.classList.add("selected"); const inp = sel.querySelector("input"); if (inp) inp.checked = true; }
   }
   updateTeaser();
+}
+
+/* ---- QUIZ STEPPER ---- */
+let wizPanels = [];
+let wizIndex = 0;
+function wizCollect() { wizPanels = Array.from(document.querySelectorAll("#step-3 .wiz-panel")); }
+function wizKind(p) { return p ? p.getAttribute("data-panel") : null; }
+function showWizPanel(i) {
+  if (!wizPanels.length) wizCollect();
+  if (!wizPanels.length) return;
+  i = Math.max(0, Math.min(wizPanels.length - 1, i));
+  wizIndex = i;
+  wizPanels.forEach((p, idx) => p.classList.toggle("active", idx === i));
+  const p = wizPanels[i], kind = wizKind(p);
+  const qPanels = wizPanels.filter(x => wizKind(x) === "q");
+  const total = qPanels.length;
+  const bar = document.getElementById("wiz-progress-bar");
+  const count = document.getElementById("wiz-count");
+  const next = document.getElementById("wiz-next");
+  const pay = document.getElementById("pay-btn");
+  if (kind === "q") { const k = qPanels.indexOf(p); if (count) count.textContent = "Question " + (k + 1) + " of " + total; if (bar) bar.style.width = ((k + 1) / (total + 1) * 100) + "%"; }
+  else if (kind === "contact") { if (count) count.textContent = "Let\u2019s get started"; if (bar) bar.style.width = "4%"; }
+  else { if (count) count.textContent = "Review & checkout"; if (bar) bar.style.width = "100%"; }
+  if (pay) pay.style.display = (kind === "review") ? "" : "none";
+  if (next) next.style.display = (kind === "review") ? "none" : "";
+  if (kind === "review") updateTeaser();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function wizValidateCurrent() {
+  const p = wizPanels[wizIndex], kind = wizKind(p);
+  if (kind === "contact") {
+    const email = (document.getElementById("cust-email") && document.getElementById("cust-email").value || "").trim();
+    const name = (document.getElementById("cust-name") && document.getElementById("cust-name").value || "").trim();
+    if (!name) { showToast("Please enter your name."); return false; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { showToast("Please enter a valid email address."); return false; }
+    state.name = name; state.email = email; persistState();
+    return true;
+  }
+  if (kind === "q") {
+    const qid = p.getAttribute("data-q");
+    if (state.answers[qid] === undefined) { showToast("Please choose the closest option."); return false; }
+    return true;
+  }
+  return true;
+}
+function wizNext() { if (!wizPanels.length) wizCollect(); if (!wizValidateCurrent()) return; if (wizIndex < wizPanels.length - 1) showWizPanel(wizIndex + 1); }
+function wizBack() { if (!wizPanels.length) wizCollect(); if (wizIndex === 0) { goStep(1); return; } showWizPanel(wizIndex - 1); }
+function wizInit() { wizCollect(); showWizPanel(0); }
+
+/* ---- SAMPLE REPORT ---- */
+const SAMPLE_SEASON = "Soft Autumn";
+function renderSample(seasonName) {
+  const d = SEASONS[seasonName]; if (!d) return;
+  const body = document.getElementById("sample-body"); if (!body) return;
+  const sw = (arr) => arr.map(([n,h]) => `<div class="swatch-card" style="background:${h}"><div class="label">${n}<span>${h.toUpperCase()}</span></div></div>`).join("");
+  const av = d.avoid.map(([n,h,r]) => `<div class="avoid-card"><div class="sw" style="background:${h}"></div><div class="text"><strong>${n}</strong>${r}</div></div>`).join("");
+  const dots = (a) => (a||[]).map(h => `<span style="background:${h}"></span>`).join("");
+  body.innerHTML = `
+    <div class="sample-season">${seasonName}</div>
+    <div class="sample-tagline">${d.tagline}</div>
+    <div class="sample-meta">Example result \u00b7 94% confidence \u2014 this is exactly what a real ${seasonName} report looks like.</div>
+    <h4>Your palette</h4>
+    <div class="palette-grid">${sw(d.palette)}</div>
+    <h4>Foundation neutrals</h4>
+    <div class="palette-grid">${sw(d.neutrals)}</div>
+    <h4>Colors to avoid</h4>
+    <div class="avoid-grid">${av}</div>
+    <h4>Your style edit</h4>
+    <div class="info-cards">
+      <div class="info-card"><h4 style="margin-top:0">Metals</h4><p>${d.metals.text}</p><div class="swatches">${dots(d.metals.swatches)}</div></div>
+      <div class="info-card"><h4 style="margin-top:0">Prints &amp; patterns</h4><p>${d.prints.text}</p></div>
+      <div class="info-card"><h4 style="margin-top:0">Makeup edit</h4><p>${d.makeup.text}</p><div class="swatches">${dots(d.makeup.swatches)}</div></div>
+      <div class="info-card"><h4 style="margin-top:0">Clothing &amp; wardrobe</h4><p>${d.clothing.text}</p></div>
+      <div class="info-card"><h4 style="margin-top:0">Jewelry</h4><p>${d.jewelry.text}</p></div>
+    </div>
+    <div class="meaning">${d.meaning}</div>
+    <div class="btn-row" style="margin-top:28px;">
+      <button class="btn btn-primary" type="button" onclick="closeSample(); goStep(3);">Get my analysis \u00b7 $49 \u2192</button>
+      <button class="btn btn-ghost" type="button" onclick="closeSample()">Close</button>
+    </div>`;
+}
+function openSample() {
+  const m = document.getElementById("sample-modal"); if (!m) return;
+  const body = document.getElementById("sample-body");
+  if (body && !body.innerHTML.trim()) renderSample(SAMPLE_SEASON);
+  m.style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+function closeSample() {
+  const m = document.getElementById("sample-modal"); if (!m) return;
+  m.style.display = "none";
+  document.body.style.overflow = "";
 }
 
 /* ---- PRE-PAYWALL TEASER ---- */
@@ -1813,6 +1942,9 @@ document.addEventListener("DOMContentLoaded", () => {
   setupUpload();
   renderFaqs("faq-list");
   renderFaqs("faq-list-results");
+  renderSample(SAMPLE_SEASON);
+  wizInit();
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSample(); });
   // Rehydrate contact fields
   const ne = document.getElementById("cust-name");  if (ne && state.name)  ne.value  = state.name;
   const ee = document.getElementById("cust-email"); if (ee && state.email) ee.value = state.email;
@@ -1825,6 +1957,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+
+  <!-- SAMPLE REPORT MODAL -->
+  <div id="sample-modal" class="sample-modal" style="display:none;" onclick="if(event.target===this)closeSample()">
+    <div class="sample-modal-inner">
+      <button class="sample-close" type="button" onclick="closeSample()" aria-label="Close">×</button>
+      <span class="sample-watermark">Sample report · example</span>
+      <div id="sample-body"></div>
+    </div>
+  </div>
 
 </body>
 </html>
