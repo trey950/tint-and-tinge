@@ -154,7 +154,11 @@ SOURCES
     padding: 10px 18px; background: var(--charcoal); color: var(--cream);
     border-radius: 999px; margin: 14px 0 22px;
     font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.95rem;
+    cursor: pointer; border: none; transition: transform .15s ease, box-shadow .15s ease;
   }
+  .price-tag:hover { transform: translateY(-1px); box-shadow: 0 10px 22px -10px rgba(42,40,35,0.55); }
+  .price-tag:focus-visible { outline: 2px solid var(--rose-deep); outline-offset: 3px; }
+  .price-tag-arrow { font-weight: 600; }
   .price-tag strong { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; }
   .lede { font-size: 1.1rem; color: var(--accent); max-width: 520px; }
   .features { list-style: none; padding: 0; margin: 22px 0; display: grid; gap: 10px; }
@@ -584,7 +588,7 @@ SOURCES
           <div class="eyebrow">Personal Color Analysis</div>
           <h1>Find the colors that were always yours.</h1>
           <p class="lede">A structured, professional-grade season analysis built from your photos, your features, and the questions a couturier would ask. Delivered as a complete personal palette in minutes.</p>
-          <div class="price-tag" id="price-tag">One-time analysis · <strong>$49</strong></div>
+          <div class="price-tag" id="price-tag" role="button" tabindex="0" onclick="goStep(3)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goStep(3);}">One-time analysis · <strong>$49</strong> <span class="price-tag-arrow">→</span></div>
 
           <div class="trust-strip">
             <div class="trust-item">
