@@ -90,9 +90,24 @@ async function loadConfig() {
       !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', c.metaPixelId);
       fbq('track', 'PageView');
-      fbq('track', 'Purchase', { value: 49.00, currency: 'USD' });
+      pixelReady = true;
+      if (purchasePending) firePurchase();
     }
   } catch (e) {}
+}
+
+// Purchase must fire ONLY after payment is verified server-side (poll -> status "ready").
+// Deduplicated by the Stripe session id so refreshes / back-navigation never double-count,
+// and so it can be matched to a server-side Conversions API event with the same event id.
+let pixelReady = false;
+let purchaseFired = false;
+let purchasePending = false;
+function firePurchase() {
+  if (purchaseFired) return;
+  if (!window.fbq) { purchasePending = true; return; }
+  purchaseFired = true;
+  const opts = sessionId ? { eventID: sessionId } : undefined;
+  fbq('track', 'Purchase', { value: 49.00, currency: 'USD' }, opts);
 }
 loadConfig();
 
@@ -119,6 +134,7 @@ async function poll() {
     const r = await fetch(`/api/order/${sessionId}`);
     const o = await r.json();
     if (o.status === "ready") {
+      firePurchase();
       seasonName.textContent = o.season;
       seasonTag.textContent  = TAGLINES[o.season] || "";
       seasonBox.classList.add("show");
