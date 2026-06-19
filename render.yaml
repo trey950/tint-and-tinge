@@ -36,4 +36,6 @@ services:
       - key: BUSINESS_ADDRESS
         value: 193 Westbury Circle, Folsom, CA 95630
       - key: BUSINESS_SUPPORT_EMAIL
-     
+        value: hello@tintandtinge.com
+      - key: META_CAPI_TOKEN
+        sync: false
