@@ -524,6 +524,17 @@ SOURCES
   }
   .methodology strong { color: var(--ink); }
 
+
+  /* CRO additions: price anchor, guarantee, teaser */
+  .price-anchor { font-size: 0.95rem; color: var(--accent); margin: 4px 0 14px; }
+  .price-anchor s { color: var(--muted); }
+  .cta-guarantee { font-size: 0.9rem; color: var(--accent); margin: 14px 0 0; }
+  .cta-guarantee .stars { color: #d8a657; letter-spacing: 1px; }
+  .teaser { background: linear-gradient(135deg,#f3e3d6,#ead2c5); border:1px solid var(--line); border-radius:16px; padding:22px 24px; margin: 8px 0 22px; }
+  .teaser-eyebrow { font-size:0.7rem; letter-spacing:2px; text-transform:uppercase; font-weight:700; color:var(--rose-deep); }
+  .teaser-read { font-family:'Cormorant Garamond',serif; font-size:1.45rem; color:var(--ink); margin:6px 0 10px; line-height:1.3; }
+  .teaser-lock { font-size:0.85rem; color:var(--accent); }
+
 </style>
 </head>
 <body>
@@ -575,10 +586,12 @@ SOURCES
             <li>Metals, prints, neutrals & a makeup edit tailored to you</li>
             <li>Yours forever — save, print, shop with confidence</li>
           </ul>
+          <p class="price-anchor">In-person color analysis runs <s>$150–300</s>. Tint &amp; Tinge uses the same method — <strong>$49</strong>, from your own photos.</p>
           <div class="btn-row">
             <button class="btn btn-primary" onclick="goStep(3)">Begin analysis →</button>
             <button class="btn btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">How it works</button>
           </div>
+          <p class="cta-guarantee"><span class="stars">★★★★★</span> Loved by 12,847 women · <strong>Love your palette or your money back — 7 days.</strong></p>
         </div>
         <div class="hero-art">
           <div class="swatch-row">
@@ -764,11 +777,17 @@ SOURCES
         </div>
       </details>
 
+      <div id="teaser" class="teaser" style="display:none;">
+        <div class="teaser-eyebrow">Your early read</div>
+        <div class="teaser-read" id="teaser-read"></div>
+        <div class="teaser-lock">🔒 Your exact season — one of twelve — plus your full palette, neutrals, metals, prints, makeup and your clothing &amp; jewelry edit unlock with your analysis.</div>
+      </div>
+      <p class="price-anchor" style="text-align:center;">In-person analysis costs $150–300. Your complete report is <strong>$49</strong>.</p>
       <div class="btn-row">
         <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
         <button class="btn btn-primary" id="pay-btn" onclick="submitToCheckout()">Continue to secure payment · $49</button>
       </div>
-      <div class="secure-note" style="margin-top:14px;">🔒 Payment by Stripe · 7-day refund guarantee · No card data touches our servers</div>
+      <div class="secure-note" style="margin-top:14px;">🔒 Payment by Stripe · <strong>Love it or your money back, 7 days</strong> · No card data touches our servers</div>
     </div>
   </section>
 
@@ -1432,6 +1451,7 @@ function renderQuestionnaire() {
       opt.querySelector("input").checked = true;
       state.answers[q] = parseInt(opt.dataset.oi);
       persistState();
+      updateTeaser();
       // Auto-scroll to next unanswered question
       const allBlocks = Array.from(form.querySelectorAll(".q-block"));
       const currentBlock = opt.closest(".q-block");
@@ -1445,6 +1465,25 @@ function renderQuestionnaire() {
     const sel = form.querySelector(`.opt[data-q="${qid}"][data-oi="${oi}"]`);
     if (sel) { sel.classList.add("selected"); const inp = sel.querySelector("input"); if (inp) inp.checked = true; }
   }
+  updateTeaser();
+}
+
+/* ---- PRE-PAYWALL TEASER ---- */
+function teaserWord(v, pos, mid, neg) { return v > 0.12 ? pos : (v < -0.12 ? neg : mid); }
+function updateTeaser() {
+  const box = document.getElementById("teaser");
+  if (!box) return;
+  const answered = QUESTIONS.filter(q => state.answers[q.id] !== undefined).length;
+  if (answered < 6) { box.style.display = "none"; return; }
+  const r = classify();
+  if (!r) { box.style.display = "none"; return; }
+  const a = r.axes;
+  const temp = teaserWord(a.warmth, "warm", "soft-neutral", "cool");
+  const val  = teaserWord(a.value,  "light", "medium-depth", "deep");
+  const chr  = teaserWord(a.chroma, "bright, clear", "balanced", "soft, muted");
+  document.getElementById("teaser-read").innerHTML =
+    `Your answers point to a <strong>${temp}</strong>, <strong>${val}</strong>, <strong>${chr}</strong> palette.`;
+  box.style.display = "block";
 }
 
 /* ---- SCORING ---- */
