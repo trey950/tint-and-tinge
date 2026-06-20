@@ -36,6 +36,25 @@
   .timeline{margin-top:14px;font-size:0.78rem;color:var(--muted);font-style:italic;font-family:'Cormorant Garamond',serif}
   .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(120px);background:#2a2823;color:var(--cream);padding:12px 22px;border-radius:999px;opacity:0;transition:opacity .3s, transform .4s;font-size:0.9rem}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .card.wide{max-width:780px}
+  .report{display:none;text-align:left;margin-top:6px}
+  .report.show{display:block;animation:popIn .5s ease}
+  .report h3{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--ink);margin:24px 0 10px}
+  .swgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+  .sw{border-radius:10px;height:76px;position:relative;overflow:hidden;border:1px solid rgba(0,0,0,.06)}
+  .sw .lbl{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.92);font-size:.62rem;padding:3px 5px;line-height:1.25;color:var(--ink)}
+  .sw .lbl span{display:block;color:var(--muted);font-size:.56rem}
+  .avoidg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .avoidg .a{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:8px}
+  .avoidg .a i{width:26px;height:26px;border-radius:6px;flex:0 0 auto;display:block;margin-top:2px}
+  .avoidg .a div{font-size:.74rem;color:var(--accent)}
+  .avoidg .a strong{display:block;color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:.98rem}
+  .edit{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:560px){.edit{grid-template-columns:1fr}}
+  .edit .c{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--cream)}
+  .edit .c h4{margin:0 0 6px;font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--rose)}
+  .edit .c p{margin:0;font-size:.82rem;color:var(--accent);line-height:1.5}
+  .rmeaning{background:linear-gradient(135deg,#f3e3d6,#ead2c5);border-radius:12px;padding:18px;margin-top:18px;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.08rem;color:var(--ink);text-align:center}
 </style>
 </head>
 <body>
@@ -48,12 +67,14 @@
     <div class="season-name" id="season-name">—</div>
     <div style="font-style:italic;color:var(--accent);font-family:'Cormorant Garamond',serif;font-size:1.15rem;" id="season-tag">—</div>
   </div>
+  <div class="report" id="report"></div>
   <div class="pending" id="pending"><span class="dots">Preparing your analysis</span></div>
   <div class="timeline" id="timeline">Most analyses arrive within 90 seconds.</div>
   <div class="progress-line" id="prog"><div></div></div>
   <div class="ref" id="ref-line"></div>
   <div class="actions">
     <button class="btn btn-primary" id="resend-btn" type="button" style="display:none">Resend my analysis</button>
+    <button class="btn btn-ghost" id="share-btn" type="button" style="display:none">↓ Save my palette</button>
     <a class="btn btn-ghost" href="/">Back to home</a>
   </div>
 </div>
@@ -68,6 +89,9 @@ const pending = document.getElementById("pending");
 const timeline = document.getElementById("timeline");
 const refLine = document.getElementById("ref-line");
 const resendBtn = document.getElementById("resend-btn");
+const shareBtn = document.getElementById("share-btn");
+const reportEl = document.getElementById("report");
+let currentOrder = null;
 const prog = document.getElementById("prog");
 const toast = document.getElementById("toast");
 
@@ -138,7 +162,9 @@ async function poll() {
       seasonName.textContent = o.season;
       seasonTag.textContent  = TAGLINES[o.season] || "";
       seasonBox.classList.add("show");
-      pending.innerHTML = "Sent to your inbox.";
+      currentOrder = o;
+      if (o.data) { renderReport(o); document.querySelector(".card").classList.add("wide"); shareBtn.style.display = "inline-flex"; }
+      pending.innerHTML = o.data ? "Your full report is below \u2014 and a copy is in your inbox." : "Sent to your inbox.";
       refLine.textContent = `Order ${o.ref}`;
       resendBtn.style.display = "inline-flex";
       prog.style.display='none'; timeline.style.display='none';
@@ -154,6 +180,45 @@ async function poll() {
   setTimeout(poll, 1500);
 }
 poll();
+
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function renderReport(o){
+  const d=o.data; if(!d) return;
+  const sw=(arr)=>arr.map(([n,h])=>`<div class="sw" style="background:${h}"><div class="lbl">${esc(n)}<span>${h.toUpperCase()}</span></div></div>`).join("");
+  const av=(d.avoid||[]).map(([n,h,r])=>`<div class="a"><i style="background:${h}"></i><div><strong>${esc(n)}</strong>${esc(r)}</div></div>`).join("");
+  reportEl.innerHTML=`
+    <h3>Your palette</h3><div class="swgrid">${sw(d.palette)}</div>
+    <h3>Foundation neutrals</h3><div class="swgrid">${sw(d.neutrals)}</div>
+    <h3>Colors to avoid</h3><div class="avoidg">${av}</div>
+    <h3>Your style edit</h3>
+    <div class="edit">
+      <div class="c"><h4>Metals</h4><p>${esc(d.metals.text)}</p></div>
+      <div class="c"><h4>Prints &amp; patterns</h4><p>${esc(d.prints.text)}</p></div>
+      <div class="c"><h4>Makeup</h4><p>${esc(d.makeup.text)}</p></div>
+      <div class="c"><h4>Clothing &amp; wardrobe</h4><p>${esc(d.clothing.text)}</p></div>
+      <div class="c"><h4>Jewelry</h4><p>${esc(d.jewelry.text)}</p></div>
+    </div>
+    <div class="rmeaning">${esc(d.meaning)}</div>`;
+  reportEl.classList.add("show");
+}
+function downloadPalette(season, tagline, palette){
+  const W=1080,H=1350,c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  function rr(px,py,w,h,r){x.beginPath();x.moveTo(px+r,py);x.arcTo(px+w,py,px+w,py+h,r);x.arcTo(px+w,py+h,px,py+h,r);x.arcTo(px,py+h,px,py,r);x.arcTo(px,py,px+w,py,r);x.closePath();}
+  x.fillStyle="#faf6f1";x.fillRect(0,0,W,H);
+  x.textAlign="center";
+  x.fillStyle="#b9776f";x.font="600 30px Georgia, serif";x.fillText("TINT \u00b7 TINGE",W/2,108);
+  x.fillStyle="#3a352e";x.font="500 84px Georgia, serif";x.fillText(season,W/2,212);
+  x.fillStyle="#6b574a";x.font="italic 34px Georgia, serif";x.fillText(tagline||"",W/2,266);
+  const cols=4,n=Math.min(palette.length,16),gap=24,gridW=W-160,cw=(gridW-gap*(cols-1))/cols,ch=cw,sx=80,sy=340;
+  for(let i=0;i<n;i++){const r=Math.floor(i/cols),cc=i%cols,px=sx+cc*(cw+gap),py=sy+r*(ch+gap+34);x.fillStyle=palette[i][1];rr(px,py,cw,ch,16);x.fill();x.fillStyle="#6b574a";x.font="22px Arial, sans-serif";x.fillText(palette[i][0],px+cw/2,py+ch+26);}
+  x.fillStyle="#8a7f73";x.font="26px Arial, sans-serif";x.fillText("tintandtinge.com",W/2,H-46);
+  c.toBlob(b=>{const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=season.replace(/\s+/g,"-").toLowerCase()+"-palette.png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000);});
+}
+shareBtn.addEventListener("click", () => {
+  if(!currentOrder||!currentOrder.data) return;
+  downloadPalette(currentOrder.season, TAGLINES[currentOrder.season]||"", currentOrder.data.palette);
+  showToast("\u2713 Palette image downloaded");
+});
 
 resendBtn.addEventListener("click", async () => {
   if (!sessionId) return;
