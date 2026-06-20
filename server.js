@@ -202,6 +202,7 @@ app.get("/api/order/:id", async (req, res) => {
     confidence: o.confidence,
     ref: o.ref,
     name: o.name,
+    data: (o.result && o.result.data) || null,
   });
 });
 
